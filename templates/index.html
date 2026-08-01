@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fieldstore — Goods, well made.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="nav-inner">
+    <button class="brand" data-nav="shop">Fieldstore</button>
+    <nav class="nav-links">
+      <button class="nav-link" data-nav="shop">Shop</button>
+      <button class="nav-link" data-nav="orders" id="nav-orders" hidden>Orders</button>
+      <button class="nav-link" data-nav="admin" id="nav-admin" hidden>Admin</button>
+    </nav>
+    <div class="nav-actions">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search the catalogue…">
+      </div>
+      <button class="icon-btn" id="cart-toggle" title="Cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="cart-count" id="cart-count" hidden>0</span>
+      </button>
+      <button class="btn btn-ghost" id="auth-btn" data-nav="login">Sign in</button>
+      <span class="user-chip" id="user-chip" hidden></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ SHOP VIEW ============ -->
+<main id="view-shop" class="view">
+  <section class="hero">
+    <div class="hero-tag">01 · A store, made from scratch</div>
+    <h1>Goods, well<br><em>made.</em></h1>
+    <p class="hero-sub">A small catalogue of things worth keeping — built with Flask,
+      SQLite, and a plain REST API underneath. Browse, add to cart, check out.</p>
+  </section>
+
+  <section class="catalog-controls">
+    <div class="chip-row" id="category-chips"></div>
+  </section>
+
+  <section class="product-grid" id="product-grid">
+    <!-- product cards injected by JS -->
+  </section>
+  <p class="empty-note" id="empty-note" hidden>No products match your search.</p>
+</main>
+
+<!-- ============ ORDERS VIEW ============ -->
+<main id="view-orders" class="view" hidden>
+  <div class="section-head">
+    <div class="hero-tag">02 · Order history</div>
+    <h2>Your orders</h2>
+  </div>
+  <div class="order-list" id="order-list"></div>
+</main>
+
+<!-- ============ ADMIN VIEW ============ -->
+<main id="view-admin" class="view admin-view" hidden>
+  <div class="section-head">
+    <div class="hero-tag">Admin</div>
+    <h2>Store dashboard</h2>
+  </div>
+
+  <div class="stat-row" id="stat-row"></div>
+
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-tab="products">Products</button>
+    <button class="admin-tab" data-tab="orders">Orders</button>
+  </div>
+
+  <div class="admin-panel" id="admin-products">
+    <div class="admin-panel-head">
+      <h3>Inventory</h3>
+      <button class="btn btn-primary" id="new-product-btn">+ Add product</button>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr>
+      </thead>
+      <tbody id="admin-product-rows"></tbody>
+    </table>
+  </div>
+
+  <div class="admin-panel" id="admin-orders" hidden>
+    <div class="admin-panel-head">
+      <h3>All orders</h3>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr>
+      </thead>
+      <tbody id="admin-order-rows"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- ============ CART DRAWER ============ -->
+<div class="drawer-overlay" id="drawer-overlay" hidden></div>
+<aside class="cart-drawer" id="cart-drawer">
+  <div class="drawer-head">
+    <h3>Your cart</h3>
+    <button class="icon-btn" id="close-cart">✕</button>
+  </div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="cart-footer">
+    <div class="cart-subtotal">
+      <span>Subtotal</span>
+      <span id="cart-subtotal">₹0.00</span>
+    </div>
+    <button class="btn btn-primary btn-block" id="checkout-btn">Checkout</button>
+  </div>
+</aside>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-overlay" id="modal-overlay" hidden>
+
+  <div class="modal" id="modal-login">
+    <button class="modal-close" data-close>✕</button>
+    <div class="modal-tag">Sign in</div>
+    <h3>Welcome back</h3>
+    <form id="login-form">
+      <label>Username or email
+        <input type="text" name="username" required>
+      </label>
+      <label>Password
+        <input type="password" name="password" required>
+      </label>
+      <p class="form-error" id="login-error"></p>
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    </form>
+    <p class="modal-switch">New here? <button data-switch="register">Create an account</button></p>
+    <p class="modal-hint">Try admin / admin123 or demo / demo1234</p>
+  </div>
+
+  <div class="modal" id="modal-register" hidden>
+    <button class="modal-close" data-close>✕</button>
+    <div class="modal-tag">Create account</div>
+    <h3>Join Fieldstore</h3>
+    <form id="register-form">
+      <label>Username
+        <input type="text" name="username" required minlength="3">
+      </label>
+      <label>Email
+        <input type="email" name="email" required>
+      </label>
+      <label>Password
+        <input type="password" name="password" required minlength="6">
+      </label>
+      <p class="form-error" id="register-error"></p>
+      <button type="submit" class="btn btn-primary btn-block">Create account</button>
+    </form>
+    <p class="modal-switch">Already have an account? <button data-switch="login">Sign in</button></p>
+  </div>
+
+  <div class="modal" id="modal-checkout" hidden>
+    <button class="modal-close" data-close>✕</button>
+    <div class="modal-tag">Checkout</div>
+    <h3>Where should it go?</h3>
+    <form id="checkout-form">
+      <label>Shipping address
+        <textarea name="shipping_address" rows="3" required minlength="5" placeholder="House no., street, city, PIN"></textarea>
+      </label>
+      <div class="checkout-summary" id="checkout-summary"></div>
+      <p class="form-error" id="checkout-error"></p>
+      <button type="submit" class="btn btn-primary btn-block">Place order</button>
+    </form>
+  </div>
+
+  <div class="modal" id="modal-product" hidden>
+    <button class="modal-close" data-close>✕</button>
+    <div class="modal-tag" id="product-modal-tag">Add product</div>
+    <h3 id="product-modal-title">New product</h3>
+    <form id="product-form">
+      <input type="hidden" name="id">
+      <label>Name
+        <input type="text" name="name" required>
+      </label>
+      <label>Description
+        <textarea name="description" rows="2"></textarea>
+      </label>
+      <div class="form-row">
+        <label>Price (₹)
+          <input type="number" name="price" min="0" step="0.01" required>
+        </label>
+        <label>Stock
+          <input type="number" name="stock" min="0" step="1" required>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Category
+          <input type="text" name="category" placeholder="e.g. Kitchen">
+        </label>
+        <label>Image URL
+          <input type="text" name="image_url" placeholder="https://…">
+        </label>
+      </div>
+      <p class="form-error" id="product-error"></p>
+      <div class="form-row">
+        <button type="button" class="btn btn-ghost" id="delete-product-btn" hidden>Delete</button>
+        <button type="submit" class="btn btn-primary">Save product</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal modal-narrow" id="modal-order-detail" hidden>
+    <button class="modal-close" data-close>✕</button>
+    <div class="modal-tag">Order detail</div>
+    <h3 id="order-detail-title">Order</h3>
+    <div id="order-detail-body"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" hidden></div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
